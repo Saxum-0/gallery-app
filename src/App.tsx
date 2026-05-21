@@ -16,7 +16,7 @@ export default function App() {
   const [bg, setBg] = useState("#0f0f0f");
 
   useEffect(() => {
-    fetch("https://gallery-appb.onrender.com/public/photos")
+    fetch("https://gallery-appb.onrender.com")
       .then((res) => res.json())
       .then((data) => setPhotos(data));
   }, []);
