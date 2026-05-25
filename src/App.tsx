@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
-import { FastAverageColor } from "fast-average-color";
 
 type Photo = {
   id: number;
@@ -8,7 +7,43 @@ type Photo = {
   name: string;
 };
 
-const fac = new FastAverageColor();
+function WatermarkedImage({ src, onClick }: { src: string; onClick: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = src;
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0);
+
+      // Watermark
+      ctx.save();
+      ctx.font = "bold 48px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.textAlign = "center";
+      ctx.fillText("Pixel Flow", 0, 0);
+      ctx.restore();
+    };
+  }, [src]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      onClick={onClick}
+      style={{ width: "100%", cursor: "pointer", display: "block" }}
+    />
+  );
+}
 
 export default function App() {
   const [photos, setPhotos] = useState<Photo[]>([]);
@@ -22,16 +57,8 @@ export default function App() {
   }, []);
 
   const handleClick = (photo: Photo) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = photo.url;
-
-    img.onload = () => {
-      const color = fac.getColor(img);
-
-      setBg(color.hex); // ✔ plus propre que rgb()
-      setSelected(photo);
-    };
+    setSelected(photo);
+    setBg("#0f0f0f");
   };
 
   return (
@@ -41,17 +68,11 @@ export default function App() {
       <div className="masonry">
         {photos.map((p) => (
           <div key={p.id} className="item">
-            <img
-              src={p.url}
-              loading="lazy"
-              crossOrigin="anonymous"
-              onClick={() => handleClick(p)}
-            />
+            <WatermarkedImage src={p.url} onClick={() => handleClick(p)} />
           </div>
         ))}
       </div>
 
-      {/* 🔥 MODAL ZOOM */}
       {selected && (
         <div className="modal" onClick={() => setSelected(null)}>
           <img src={selected.url} className="modal-img" />
